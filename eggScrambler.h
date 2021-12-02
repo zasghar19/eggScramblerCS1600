@@ -13,7 +13,7 @@ typedef enum {
 
 // Helper Functions
 
-state update_fsm();
+state update_fsm(state cur_state, long mils, int moveVert);
 
 void enableWDT();
 
