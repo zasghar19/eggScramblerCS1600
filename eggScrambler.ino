@@ -1,5 +1,6 @@
 #include "eggScrambler.h"
 #include <Stepper.h>
+#include "eggScramblerWifi.h"
 
 // Set up for z-axis movement
 #define dirPin 6
@@ -16,7 +17,7 @@ int in4Pin = 9;
 Stepper motor(768, in1Pin, in2Pin, in3Pin, in4Pin);
 
 state CURRENT_STATE;
-bool is_button_pressed, stop_button_pressed, is_spatula_low, stove_rotated;
+bool is_spatula_low, stove_rotated;
 int saved_clock;
 int* inputs;
 int moveVert;
@@ -49,13 +50,14 @@ void setup() {
   // initialize values
   CURRENT_STATE = (state) 1;
   saved_clock = 0;
-  is_button_pressed = false;
-  stop_button_pressed = false;
   is_spatula_low = false;
   stove_rotated = false;
 
   // Stove dial stepper speed
   motor.setSpeed(20);
+
+  // Set up wifi
+  setupWifi();
   
   // set up watchdog (normal mode, no early warning/window)
   enableWDT();
@@ -68,13 +70,13 @@ void loop() {
   WDT->CLEAR.reg = 0xA5;
 
   inputs = update_inputs();
-  CURRENT_STATE = update_fsm(CURRENT_STATE, millis(), inputs[0]);
+  CURRENT_STATE = update_fsm(CURRENT_STATE, millis(), inputs[0], inputs[1], inputs[2]);
   
   delay(10);
 }
 
 // Invalid states/variables and state combos move to sTURN_STOVE_OFF
-state update_fsm(state cur_state, long mils, int moveVert) {
+state update_fsm(state cur_state, long mils, int moveVert, int is_button_pressed, int stop_button_pressed) {
   state next_state;
 
   switch(cur_state) {

@@ -1,0 +1,3 @@
+void setupWifi();
+
+int checkForClients();
