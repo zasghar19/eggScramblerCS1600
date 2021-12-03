@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="egg-design.css">
+    <script>
+        // document.getElementsByName("button")[0].addEventListener('change', makeAvailable);
+        document.addEventListener('input', function (evt) {
+            if (document.getElementById("ip").value != "") {
+                makeAvailable();
+            } else {
+                makeUnavailable();
+            }
+        });
+
+        function makeAvailable() {
+            document.getElementsByName("button")[0].classList.remove('unavailable');
+            document.getElementsByName("button")[0].classList.add('available');
+        }
+
+        function makeUnavailable() {
+            document.getElementsByName("button")[0].classList.add('unavailable');
+            document.getElementsByName("button")[0].classList.remove('available');
+        }
+
+        function conditionalRedirect() {
+            if (!document.getElementsByName("button")[0].classList.contains('unavailable')) {
+                console.log("trying to connect!");
+                try {
+                    console.log("http://" + document.getElementById("ip").value);
+                    fetch("http://" + document.getElementById("ip").value)
+                        .then(response => {
+                            console.log(response);
+                            localStorage["address"] = "http://" +  document.getElementById("ip").value;
+                            document.location.href = "egg-connected.html"
+                    })
+                        .catch(error => alert("Can't connect to egg scrambler. Please try again."));
+                } catch(e) {
+                    alert("Can't connect to egg scrambler. Please try again.")
+                }
+            }
+        }
+    </script>
+</head>
+
+<body>
+    <h1 class="header">Enter IP Address</h1>
+    <!-- <h2 class="subheader">This is a paragraph.</h2> -->
+    <!-- <p class="info">Info about the Arduino</p> -->
+    <input id="ip" class="input-box placeholder" placeholder="192.168.1.1"></input>
+    <button onclick="conditionalRedirect()" class="connect-button button-text unavailable add-space" name="button">
+        Connect
+    </button>
+    <p class="second-option-text">Can't find IP address?</p>
+</body>
+
+</html>

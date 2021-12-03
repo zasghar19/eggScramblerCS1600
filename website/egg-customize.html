@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="egg-design.css">
+    <script>
+        document.addEventListener('input', function (evt) {
+            if (document.getElementsByName("mins")[0].value != ""
+                && document.getElementsByName("secs")[0].value != "") {
+                makeAvailable();
+            }
+        });
+
+        function makeAvailable() {
+            document.getElementsByName("button")[0].classList.remove('unavailable');
+            document.getElementsByName("button")[0].classList.add('available');
+        }
+
+        function makeUnavailable() {
+            document.getElementsByName("button")[0].classList.add('unavailable');
+            document.getElementsByName("button")[0].classList.remove('available');
+        }
+
+        function conditionalRedirect() {
+            if (!document.getElementsByName("button")[0].classList.contains('unavailable')) {
+                var mins = parseInt(document.getElementsByName("mins")[0].value);
+                var secs = parseInt(document.getElementsByName("secs")[0].value);
+                if (mins > 4 || mins < 1 || mins == 4 && secs > 0 || secs < 0 || secs > 59) {
+                    alert("Invalid time.");
+                } else {
+                    localStorage["countdown"] = mins * 60 + secs;
+                    sendStart();
+                }
+            }
+        }
+
+        function sendStart() {
+            try {
+                console.log(localStorage["address"] + "/start?cooking-time=" + localStorage["countdown"]);
+                fetch(localStorage["address"] + "/start?cooking-time=" + localStorage["countdown"])
+                    .then(response => {
+                        console.log(response);
+                        if (response.ok) {
+                            document.location.href = "egg-timer.html";
+                        } else {
+                            alert("The egg scrambler did not accept your input.")
+                        }
+                    })
+                    .catch(error => alert("Can't connect to egg scrambler. Please try again."));
+            } catch (e) {
+                alert("Can't connect to egg scrambler. Please try again.")
+            }
+        }
+    </script>
+</head>
+
+<body class="brown-background">
+    <div class="floating-box">
+        <h1 class="header">Egg Scrambler</h1>
+        <p class="subheader">Cooking Time</p>
+        <p class="info">Please select a time between 1 minute and 4 minutes.</p>
+        <div class="time-input-container">
+            <input class="input-box time first-box" type="number" id="mins" name="mins" min="1" max="4" placeholder="1">
+            <p class="time colon">:</p>
+            <input class="input-box time" type="number" id="secs" name="secs" min="0" max="59" placeholder="00">
+        </div>
+        <!-- <input class="input-box placeholder" id="time" type="time" min="00:60" max="03:00" placeholder="00:60" required> -->
+        <button onclick="conditionalRedirect()" class="connect-button button-text unavailable"
+            name="button">Start</button>
+    </div>
+</body>
+
+</html>

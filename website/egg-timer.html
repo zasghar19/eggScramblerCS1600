@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="egg-design.css">
+    <script>
+        // localStorage["countdown"] = 10;
+        var countdown = localStorage["countdown"];
+        var currCount = localStorage["countdown"];
+        window.requestAnimationFrame(function () {
+            setTimeCircle(localStorage["countdown"]);
+            localStorage["countdown"] = localStorage["countdown"] - 1;
+        });
+        currCount = setInterval(function () {
+            // console.log(currCount);
+            window.requestAnimationFrame(function () {
+                if (currCount == 0) {
+                    setTimeCircle(localStorage["countdown"]);
+                    currCount = localStorage["countdown"];
+                    localStorage["countdown"] = 0;
+                } else {
+                    setTimeCircle(currCount);
+                }
+            });
+            if (currCount == 0 && document.getElementsByName("float")[0].classList.contains("hidden")) {
+                document.getElementsByName("float")[0].classList.remove('hidden');
+            }
+            if (currCount > 0) {
+                currCount--;
+            }
+        }, 1000);
+
+        function setTimeCircle(currCount) {
+            var desiredHeight = window.innerHeight / 4;
+            var dim = desiredHeight * 1.4;
+            var rad = desiredHeight;
+            var ctx = document.getElementById('canvas').getContext('2d');
+            ctx.canvas.width = dim;
+            ctx.canvas.height = dim / 1.4;
+            displayTime = Math.floor(currCount / 60) + ":" + (
+                currCount % 60 < 10 ? "0" + currCount % 60 : currCount % 60);
+            ctx.lineWidth = 20;
+            ctx.save();
+            ctx.clearRect(0, 0, dim, dim);
+            ctx.translate(dim / 2, dim / 2);
+            ctx.scale(0.4, 0.4);
+            ctx.rotate(-Math.PI / 2);
+            ctx.translate(-dim / 2, -dim);
+
+            // set grey background circle
+            ctx.fillStyle = '#F6F6F6';
+            ctx.strokeStyle = '#F6F6F6';
+            ctx.beginPath();
+            ctx.arc(dim, dim, rad, 0, Math.PI * 2, true);
+            ctx.stroke();
+
+            ctx.fillStyle = '#855400';
+            ctx.strokeStyle = '#855400';
+            ctx.font = desiredHeight / 4 + 'px sans-serif';
+            ctx.rotate(Math.PI / 2);
+            ctx.fillText(displayTime, dim - 100, -dim);
+            ctx.rotate(-Math.PI / 2);
+            ctx.beginPath();
+            var endAngle = Math.PI * 2 - ((currCount) / countdown * Math.PI * 2);
+            if (endAngle == 0) {
+                endAngle = Math.PI * 2;
+            }
+            ctx.arc(dim, dim, rad, 0, endAngle, true);
+            ctx.stroke();
+            ctx.restore();
+
+        }
+
+        function sendStop() {
+            // send stop to Arduino
+            try {
+                fetch(localStorage["address"] + "/stop")
+                    .then(response => {
+                        console.log(response);
+                        if (response.ok) {
+                            document.location.href = "egg-stopped.html";
+                        } else {
+                            alert("An error occurred.")
+                        }
+                    })
+                    .catch(error => alert("Can't connect to egg scrambler. Please try again."));
+            } catch (e) {
+                alert("Can't connect to egg scrambler. Please try again.")
+            }
+        }
+    </script>
+</head>
+
+<body class="float-help">
+    <h1 class="header">Egg Scrambler</h1>
+    <canvas id="canvas"></canvas>
+    <button onclick="sendStop()" class="connect-button button-text stop" name="button">
+        Emergency Stop
+    </button>
+    <div class="floating-box float hidden" name="float">
+        <div class="shrink-to-fit">
+            <h1 class="header">Finito!</h1>
+            <p class="info">Your eggs are done!</p>
+            <img class="egg-img" src="egg icon.png" />
+            <a href="egg-customize.html">
+                <button class="connect-button button-text available" name="button">
+                    Start a new batch
+                </button>
+            </a>
+            <p class="second-option-text">Close</p>
+        </div>
+    </div>
+</body>
+
+</html>
