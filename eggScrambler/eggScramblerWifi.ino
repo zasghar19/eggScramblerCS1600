@@ -45,7 +45,7 @@ void setupWifi() {
 
 
 int checkForClients() {
-  boolean runEggScrambler = 0;
+  int runEggScrambler = 0;
 //  Serial.print("should egg scrambler be scrambling?");
 //  Serial.println(runEggScrambler);
   WiFiClient client = server.available();   // listen for incoming clients
@@ -112,8 +112,9 @@ int checkForClients() {
     // close the connection:
     client.stop();
     Serial.println("client disconnected");
-    return runEggScrambler;
+//    return runEggScrambler;
   }
+  return runEggScrambler;
 }
 
 void printWiFiStatus() {

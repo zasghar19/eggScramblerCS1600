@@ -23,10 +23,14 @@ int HalfServoIndex = 14;
 int FullServoIndex = 0;
 
 // stove dial stepper motor set-up, change pin numbers
-int in1Pin = 12;
-int in2Pin = 11;
-int in3Pin = 10;
-int in4Pin = 9;
+// 12
+int in1Pin = 13;
+// 11
+int in2Pin = 10;
+// was 10
+int in3Pin = 9;
+// was 9
+int in4Pin = 8;
 Stepper motor(768, in1Pin, in2Pin, in3Pin, in4Pin);
 
 state CURRENT_STATE;
@@ -36,7 +40,7 @@ int inps[] = {0, 0, 0, 0};
 int moveVert;
 
 // Input variables -- we need to input the correct values
-int cooking_time = 10000;
+int cooking_time = 20000;
 int stove_rotation = -2000;
 
 void setup() {
@@ -66,19 +70,21 @@ void setup() {
   while(!Serial);
 
   // initialize values
-  CURRENT_STATE = (state) 2;
+  CURRENT_STATE = (state) 1;
   saved_clock = 0;
   is_spatula_low = false;
   stove_rotated = false;
 
   // Stove dial stepper speed, need to speed up or it breaks
-  motor.setSpeed(50);
+  motor.setSpeed(20);
 
   // Set up wifi
-//  setupWifi();
+  setupWifi();
   
   // set up watchdog (normal mode, no early warning/window)
   enableWDT();
+
+  // take out?
   saved_clock = millis();
 
 }
@@ -90,7 +96,6 @@ void loop() {
   update_inputs();
   
   CURRENT_STATE = update_fsm(CURRENT_STATE, millis(), inps[0], inps[1], inps[2], inps[3]);
-//  move_spatula_xy();
   
   delay(100);
 }
@@ -355,5 +360,9 @@ void move_spatula_xy() {
 
 // Synchronous, need to make sure WDT is longer than this
 void turn_stove(int stove_rotation) {
-  motor.step(stove_rotation);
+  motor.step(stove_rotation/3);
+  WDT->CLEAR.reg = 0xA5;
+  motor.step(stove_rotation/3);
+  WDT->CLEAR.reg = 0xA5;
+  motor.step(stove_rotation/3);
 }

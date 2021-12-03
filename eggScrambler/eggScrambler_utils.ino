@@ -21,10 +21,12 @@ int* update_inputs() {
   int clientConnected = checkForClients();
 
   if (clientConnected == 1) {
+    Serial.println("client strt");
     inps[1] = 1;
   } 
 
   else if (clientConnected == -1) {
+    Serial.println("client stop");
     inps[2] = 1;
   }
 
@@ -40,6 +42,7 @@ int* update_inputs() {
   else {
     inps[3] = 0;
   }
+
 
   Serial.println(inps[0]);
   Serial.println(inps[1]);
