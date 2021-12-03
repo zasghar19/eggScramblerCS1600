@@ -35,7 +35,7 @@ void setupWifi() {
     Serial.println(ssid);                   // print the network name (SSID);
 
     // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
-    status = WiFi.begin(ssid, pass);
+    status = WiFi.begin(ssid);
     // wait 10 seconds for connection:
     delay(10000);
   }
@@ -46,8 +46,8 @@ void setupWifi() {
 
 int checkForClients() {
   boolean runEggScrambler = 0;
-  Serial.print("should egg scrambler be scrambling?");
-  Serial.println(runEggScrambler);
+//  Serial.print("should egg scrambler be scrambling?");
+//  Serial.println(runEggScrambler);
   WiFiClient client = server.available();   // listen for incoming clients
   
   if (client) {                             // if you get a client,

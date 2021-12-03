@@ -19,7 +19,7 @@ Stepper motor(768, in1Pin, in2Pin, in3Pin, in4Pin);
 state CURRENT_STATE;
 bool is_spatula_low, stove_rotated;
 int saved_clock;
-int* inputs;
+int inps[] = {0, 0, 0};
 int moveVert;
 
 // Input variables -- we need to input the correct values
@@ -66,13 +66,13 @@ void setup() {
 }
 
 void loop() {
-  // kick watchdog
+  // pet watchdog
   WDT->CLEAR.reg = 0xA5;
-
-  inputs = update_inputs();
-  CURRENT_STATE = update_fsm(CURRENT_STATE, millis(), inputs[0], inputs[1], inputs[2]);
+  Serial.println("loop working!");
+  update_inputs();
+  CURRENT_STATE = update_fsm(CURRENT_STATE, millis(), inps[0], inps[1], inps[2]);
   
-  delay(10);
+  delay(100);
 }
 
 // Invalid states/variables and state combos move to sTURN_STOVE_OFF
@@ -81,11 +81,16 @@ state update_fsm(state cur_state, long mils, int moveVert, int is_button_pressed
 
   switch(cur_state) {
     case sWAITING:
+      Serial.println("in waiting state");
+      Serial.print("is button pressed");
+      Serial.println(is_button_pressed);
       if (!is_button_pressed) { // transition 1-1
+        Serial.println("button not been pressed");
         next_state = sWAITING;
       }
 
       else if (is_button_pressed) { // transition 1-2
+        Serial.println("button pressed!");
         turn_stove(stove_rotation);
         stove_rotated = true;
         next_state = sTURN_STOVE_ON;
@@ -93,13 +98,15 @@ state update_fsm(state cur_state, long mils, int moveVert, int is_button_pressed
 
       // Should be inaccessible
       else {
+        Serial.println("YIKES DISASTER!");
         next_state = sTURN_STOVE_OFF;
         Serial.println("invalid state and variables, turning off stove");
       }
-      
+      Serial.println(next_state);
       break;     
     case sTURN_STOVE_ON:
-      if (moveVert != 0 and !stop_button_pressed) { // transitition 2-3
+      Serial.println("succesfully in second state");
+      if (moveVert != 0 and !stop_button_pressed) { // transition 2-3
         // enables movement up and down
         move_spatula_z(moveVert);
         is_spatula_low = read_if_spatula_low();
@@ -228,17 +235,28 @@ void enableWDT() {
   // Configure and enable WDT GCLK:
   GCLK->GENDIV.reg = GCLK_GENDIV_DIV(4) | GCLK_GENDIV_ID(5);
   while (GCLK->STATUS.bit.SYNCBUSY);
-
   // set GCLK->GENCTRL.reg and GCLK->CLKCTRL.reg
-  GCLK->GENCTRL.reg = GCLK_GENCTRL_DIVSEL | GCLK_GENCTRL_GENEN | GCLK_GENCTRL_SRC_OSCULP32K | GCLK_GENCTRL_ID(5);
+  GCLK->GENCTRL.reg = GCLK_GENCTRL_GENEN | GCLK_GENCTRL_ID(5) | GCLK_GENCTRL_IDC | GCLK_GENCTRL_SRC(3) | GCLK_GENCTRL_DIVSEL;
   while (GCLK->STATUS.bit.SYNCBUSY);
   GCLK->CLKCTRL.reg = GCLK_CLKCTRL_CLKEN | GCLK_CLKCTRL_GEN(5) | GCLK_CLKCTRL_ID(3);
+  while (GCLK->STATUS.bit.SYNCBUSY);
+  // Configure and enable WDT:
+  // WDT->CONFIG.reg, WDT->EWCTRL.reg, WDT->CTRL.reg
+  WDT->CONFIG.reg = WDT_CONFIG_PER(9);
+  WDT->EWCTRL.reg = WDT_EWCTRL_EWOFFSET(8);
+//  while (WDT->STATUS.bit.SYNCBUSY);
+  // Enable early warning interrupts on WDT:
+  // reference WDT registers with WDT->register_name.reg
+  WDT->INTENSET.reg = WDT_INTENSET_EW;
+  WDT->CTRL.reg = WDT_CTRL_ENABLE;
+}
 
-  // Configure and enable WDT (4 second period)
-  WDT->CONFIG.reg |= WDT_CONFIG_PER(9);
-  while (WDT->STATUS.bit.SYNCBUSY);
-  WDT->CTRL.reg |= WDT_CTRL_ENABLE;
-  while (WDT->STATUS.bit.SYNCBUSY);
+void WDT_Handler() {
+  // Clear interrupt register flag
+  // (reference register with WDT->register_name.reg)
+  WDT->INTFLAG.reg |= WDT_INTFLAG_EW;
+  // Warn user that a watchdog reset may happen
+  Serial.println("A WATCHDOG RESET MAY HAPPEN!!!");
 }
 
 // Asynchronous
