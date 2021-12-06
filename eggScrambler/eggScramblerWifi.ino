@@ -1,23 +1,18 @@
 /*
-  WiFi Web Server LED Blink
-
-  A simple web server.
-
-  This example is written for a network using WPA encryption. For
-  WEP or WPA, change the WiFi.begin() call accordingly.
-
-  Circuit:
-   WiFi shield attached
-*/
+ * Much of this code was repurposed from one of the Arduino Wifi examples. 
+ * Importantly, the variable runEggScrambler can have a value of 1 or -1 (mutually exclusive).
+ * If runEggScrambler = 1, it means that we have received a start request from the web server.
+ * As a result, is_button_pressed := 1. If runEggScramber = -1, it means that we have received 
+ * a stop request from the server. As aa result, stop_button_pressed := 1. Mapping the 
+ * runEggScrambler value to the is_button_pressed and stop_button_pressed variables is completed
+ * in the eggScrambler_utils file. 
+ */
 
 #include <SPI.h>
 #include <WiFi101.h>
 
 #include "arduino_secrets.h"
-///////please enter your sensitive data in the Secret tab/arduino_secrets.h
-char ssid[] = SECRET_SSID;        // your network SSID (name)
-char pass[] = SECRET_PASS;    // your network password (use for WPA, or use as key for WEP)
-int keyIndex = 0;                 // your network key Index number (needed only for WEP)
+char ssid[] = SECRET_SSID;        
 
 int status = WL_IDLE_STATUS;
 WiFiServer server(80);
@@ -32,9 +27,9 @@ void setupWifi() {
   // attempt to connect to WiFi network:
   while ( status != WL_CONNECTED) {
     Serial.print("Attempting to connect to Network named: ");
-    Serial.println(ssid);                   // print the network name (SSID);
+    // print the network name (SSID);
+    Serial.println(ssid);
 
-    // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
     status = WiFi.begin(ssid);
     // wait 10 seconds for connection:
     delay(10000);
@@ -46,8 +41,6 @@ void setupWifi() {
 
 int checkForClients() {
   int runEggScrambler = 0;
-//  Serial.print("should egg scrambler be scrambling?");
-//  Serial.println(runEggScrambler);
   WiFiClient client = server.available();   // listen for incoming clients
   
   if (client) {                             // if you get a client,
@@ -71,6 +64,7 @@ int checkForClients() {
             if (cookingTime == 0) {
               requestValid = false;
             } else {
+              cooking_time = cookingTime * 1000;
               runEggScrambler = 1;
             }
           } else if (currentLine.indexOf("GET /stop") != -1) {

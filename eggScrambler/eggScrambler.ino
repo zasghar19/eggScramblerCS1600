@@ -22,26 +22,26 @@ Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 int HalfServoIndex = 14;
 int FullServoIndex = 0;
 
-// stove dial stepper motor set-up, change pin numbers
-// 12
+// Set up for stove stepper motor
 int in1Pin = 13;
-// 11
 int in2Pin = 10;
-// was 10
 int in3Pin = 9;
-// was 9
 int in4Pin = 8;
 Stepper motor(768, in1Pin, in2Pin, in3Pin, in4Pin);
 
+
+// Global variables
 state CURRENT_STATE;
 bool is_spatula_low, stove_rotated;
 int saved_clock;
+// inps[] is an array which contains the following values, [moveVert, is_button_pressed, stop_button_pressed, spatula_low_toggled]
 int inps[] = {0, 0, 0, 0};
-int moveVert;
 
-// Input variables -- we need to input the correct values
-int cooking_time = 20000;
-int stove_rotation = -2000;
+// Input variables -- cooking_time is set via Alice's website (check eggScramblerWifi)
+int cooking_time;
+int stove_rotation = -600;
+
+
 
 void setup() {
 
@@ -54,7 +54,7 @@ void setup() {
   // Set up for z-movement
   pinMode(stepPin, OUTPUT);
   pinMode(dirPin, OUTPUT);
-  // Buttons for UP and DOWN:
+  // Buttons for UP and DOWN and IS_SPATULA_LOW:
   pinMode(UP_BUTTON_PIN, INPUT);
   pinMode(DOWN_BUTTON_PIN, INPUT);
   pinMode(SPATULA_LOW_PIN, INPUT);
@@ -81,46 +81,42 @@ void setup() {
   // Set up wifi
   setupWifi();
   
-  // set up watchdog (normal mode, no early warning/window)
+  // set up watchdog (early warning/window enabled)
   enableWDT();
-
-  // take out?
-  saved_clock = millis();
 
 }
 
 void loop() {
   // pet watchdog
   WDT->CLEAR.reg = 0xA5;
-  Serial.println("loop working!");
-  update_inputs();
   
+  update_inputs(); 
   CURRENT_STATE = update_fsm(CURRENT_STATE, millis(), inps[0], inps[1], inps[2], inps[3]);
   
   delay(100);
 }
 
-// Invalid states/variables and state combos move to sTURN_STOVE_OFF, depending on whether stove on, error states should turn it off
+/*
+ * Main loop that carries out the logic of our fsm. Importantly, invalid states/variables 
+ * and state combos move to sTURN_STOVE_OFF.
+ */
 state update_fsm(state cur_state, long mils, int moveVert, int is_button_pressed, int stop_button_pressed, int is_spatula_low_pin) {
   state next_state;
 
   switch(cur_state) {
     case sWAITING:
       if (!is_button_pressed) { // transition 1-1
-        Serial.println("waitng state, button not been pressed");
         next_state = sWAITING;
       }
 
       else if (is_button_pressed) { // transition 1-2
-        Serial.println("waiting state, button pressed!");
         turn_stove(stove_rotation);
         stove_rotated = true;
         next_state = sTURN_STOVE_ON;
       }
 
-      // Should be inaccessible
+      // Should be inaccessible, error
       else {
-        Serial.println("waiting state, YIKES DISASTER!");
         turn_stove(-1 * stove_rotation);
         stove_rotated = false;
         next_state = sTURN_STOVE_OFF;
@@ -131,28 +127,23 @@ state update_fsm(state cur_state, long mils, int moveVert, int is_button_pressed
     case sTURN_STOVE_ON:
     
       if (moveVert != 0 and !stop_button_pressed) { // transition 2-3
-        // enables movement up and down
-        Serial.println("turn stove on, move vertical");
         move_spatula_z(moveVert);
         is_spatula_low = read_if_spatula_low(is_spatula_low_pin);
         next_state = sLOWER_SPATULA;
       }
 
       else if (moveVert == 0 and !stop_button_pressed) { // transition 2-2
-        Serial.println("turn stove on, no move");
         next_state = sTURN_STOVE_ON;
       }
 
       else if (stop_button_pressed) { // transition 2-5
-        Serial.println("turn stove on, stop button");
         turn_stove(-1 * stove_rotation);
         stove_rotated = false;
         next_state = sTURN_STOVE_OFF;
       }
 
-      // Should be inaccessible
+      // Should be inaccessible, error state
       else {
-        Serial.println("turn stove on, YIKES");
         turn_stove(-1 * stove_rotation);
         stove_rotated = false;
         next_state = sTURN_STOVE_OFF;
@@ -163,105 +154,90 @@ state update_fsm(state cur_state, long mils, int moveVert, int is_button_pressed
       break;
     case sLOWER_SPATULA:
       if (!is_spatula_low and moveVert == 0 and !stop_button_pressed){ // transition 3-3, not moving spatula
-        Serial.println("lower spatula, no move");
         is_spatula_low = read_if_spatula_low(is_spatula_low_pin);
         next_state = sLOWER_SPATULA;
       }
 
       else if (!is_spatula_low and moveVert != 0 and !stop_button_pressed) { // transition 3-3, moving spatula
-        Serial.println("lower spatula, move");
         move_spatula_z(moveVert);
         is_spatula_low = read_if_spatula_low(is_spatula_low_pin);
         next_state = sLOWER_SPATULA;
       }
 
       else if (is_spatula_low and !stop_button_pressed) { // transition 3-4
-        Serial.println("lower spatula, spatula is low");
         move_spatula_xy();
         saved_clock = mils;
         next_state = sMOVE_SPATULA;
       }
 
       else if (stop_button_pressed) { // transition 3-5
-        Serial.println("lower spatula, stop button pressed");
         turn_stove(-1 * stove_rotation);
         stove_rotated = false;
         next_state = sTURN_STOVE_OFF;
       }
 
-      // Should be inaccessible
+      // Should be inaccessible, error state
       else {
-        Serial.println("lower spatulaa, YIKES");
-        next_state = sTURN_STOVE_OFF;
         turn_stove(-1 * stove_rotation);
         stove_rotated = false;
+        next_state = sTURN_STOVE_OFF;
         Serial.println("invalid state and variables, turning off stove");
       }
       
       break;
     case sMOVE_SPATULA:
       if (mils - saved_clock < cooking_time and !stop_button_pressed) { // transition 4-4
-        Serial.println("move spatula, move xy");
         move_spatula_xy();
         next_state = sMOVE_SPATULA;
       }
 
       else if (mils - saved_clock >= cooking_time or stop_button_pressed) { // transition 4-5
-        Serial.println("move spatula, done cooking");
         turn_stove(-1 * stove_rotation);
         stove_rotated = false;
         next_state = sTURN_STOVE_OFF;
       }
 
-      // Should be inaccessible
+      // Should be inaccessible, error state
       else {
-        Serial.println("move spatula, YIKES");
-        next_state = sTURN_STOVE_OFF;
         turn_stove(-1 * stove_rotation);
         stove_rotated = false;
+        next_state = sTURN_STOVE_OFF;
         Serial.println("invalid state and variables, turning off stove");
       }
       
       break;
     case sTURN_STOVE_OFF:
       if (moveVert != 0) { // transition 5-6
-        Serial.println("turn stove off, move");
         move_spatula_z(moveVert);
         is_spatula_low = read_if_spatula_low(is_spatula_low_pin);
         next_state = sRAISE_SPATULA;
       }
 
       else { // transition 5-5
-        Serial.println("turn stove off, no move");
         next_state = sTURN_STOVE_OFF;
       }
       
       break;
     case sRAISE_SPATULA:
       if (is_spatula_low and moveVert != 0) { // transition 6-6, moving spatula
-        Serial.println("raise spatula, spatula low, move");
         move_spatula_z(moveVert);
         is_spatula_low = read_if_spatula_low(is_spatula_low_pin);
         next_state = sRAISE_SPATULA;
       }
 
       else if (is_spatula_low and moveVert == 0) { // transition 6-6, not moving spatula
-        Serial.println("raise spatula, spatula low, no move");
         is_spatula_low = read_if_spatula_low(is_spatula_low_pin);
         next_state = sRAISE_SPATULA;
       }
 
       else if (!is_spatula_low) { // transition 6-1
-        Serial.println("raise spatula, spatula not low");
         next_state = sWAITING;
       }
 
-      
       else {
-        Serial.println("raise spaatula, spatula not low");
-        next_state = sTURN_STOVE_OFF;
         turn_stove(-1 * stove_rotation);
         stove_rotated = false;
+        next_state = sTURN_STOVE_OFF;
         Serial.println("invalid state and variables, turning off stove");
       }
       
@@ -305,13 +281,12 @@ void enableWDT() {
 
 void WDT_Handler() {
   // Clear interrupt register flag
-  // (reference register with WDT->register_name.reg)
   WDT->INTFLAG.reg |= WDT_INTFLAG_EW;
+  
   // Warn user that a watchdog reset may happen
   Serial.println("A WATCHDOG RESET MAY HAPPEN!!!");
 }
 
-// Asynchronous
 void move_spatula_z(int moveVert) {
   saved_clock = millis();
 
@@ -335,34 +310,17 @@ void move_spatula_z(int moveVert) {
   
 }
 
-// Sami tomorrow
+
 void move_spatula_xy() {
-   // put your main code here, to run repeatedly:
   for (int i = SERVOMIN; i <= SERVOMAX; i += 10) {
     // half speed positive
     int tmp = 0;
     int fullServoSpeed = map(tmp, SERVOMIN, SERVOMAX, CONTSTATIONARY, CONTMAXPOSITIVE);
     pwm.setPWM(HalfServoIndex, 0, i);
     delay(50);
-//    pwm.setPWM(FullServoIndex, 0, 370);
-//    delay(25);
-  }
-  WDT->CLEAR.reg = 0xA5;
-  for (int j = SERVOMAX; j >= SERVOMIN; j -= 10) {
-    int tmp = 0;
-    int fullServoSpeed = map(tmp, SERVOMIN, SERVOMAX, CONTSTATIONARY, CONTMAXNEGATIVE);
-    pwm.setPWM(HalfServoIndex, 0, j);
-    delay(50);
-//    pwm.setPWM(FullServoIndex, 0, 430);   
-//    delay(25);
   }
 }
 
-// Synchronous, need to make sure WDT is longer than this
 void turn_stove(int stove_rotation) {
-  motor.step(stove_rotation/3);
-  WDT->CLEAR.reg = 0xA5;
-  motor.step(stove_rotation/3);
-  WDT->CLEAR.reg = 0xA5;
-  motor.step(stove_rotation/3);
+  motor.step(stove_rotation);
 }
