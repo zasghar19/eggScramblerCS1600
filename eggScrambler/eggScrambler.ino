@@ -41,7 +41,8 @@ int inps[] = {0, 0, 0, 0};
 int cooking_time;
 int stove_rotation = -600;
 
-
+//Interrupt pin
+int INTERRUPT_PIN =  4;
 
 void setup() {
 
@@ -83,6 +84,9 @@ void setup() {
   
   // set up watchdog (early warning/window enabled)
   enableWDT();
+
+  // set up interrupt
+  attachInterrupt(digitalPinToInterrupt(INTERRUPT_PIN), interruptButtonClicked, RISING);
 
 }
 
@@ -323,4 +327,13 @@ void move_spatula_xy() {
 
 void turn_stove(int stove_rotation) {
   motor.step(stove_rotation);
+}
+
+void interruptButtonClicked() {
+  if (stove_rotated) {
+    turn_stove(-1 * stove_rotation);
+    stove_rotated = false;
+  }
+  CURRENT_STATE  = sTURN_STOVE_OFF;
+  Serial.println("Interrupted via stop button!");
 }
