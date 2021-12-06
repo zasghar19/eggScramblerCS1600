@@ -1,3 +1,6 @@
+#define TESTING
+bool test_all_tests();
+
 typedef enum {
     sWAITING = 1,
     sTURN_STOVE_ON = 2,
