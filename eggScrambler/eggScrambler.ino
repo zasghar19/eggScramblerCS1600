@@ -79,6 +79,8 @@ void setup() {
   // Stove dial stepper speed, need to speed up or it breaks
   motor.setSpeed(20);
 
+//  test_all_tests();
+
   // Set up wifi
   setupWifi();
   
