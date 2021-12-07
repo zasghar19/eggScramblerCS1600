@@ -300,12 +300,10 @@ void move_spatula_z(int moveVert) {
   saved_clock = millis();
 
   if (moveVert == 1) {
-    Serial.println("move up");
     digitalWrite(dirPin, HIGH);
     digitalWrite(enaPin, HIGH);
   }
   else if (moveVert == -1) {
-    Serial.println("move doown");
     digitalWrite(dirPin, LOW);
     digitalWrite(enaPin, LOW);
   }
