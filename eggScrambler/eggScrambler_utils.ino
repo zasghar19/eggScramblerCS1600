@@ -30,7 +30,6 @@ int* update_inputs() {
   }
 }
 
-// by button, Sami will implement (based on inputs), return false by default
 bool read_if_spatula_low(int is_spatula_low_pin) {
   if (is_spatula_low_pin) {
     return !is_spatula_low;

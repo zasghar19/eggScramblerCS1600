@@ -3,6 +3,7 @@
 #include <Adafruit_PWMServoDriver.h>
 #include "eggScrambler.h"
 #include "eggScramblerWifi.h"
+#include "eggScrambler_utils.h"
 
 // Set up for z-axis movement
 #define dirPin 6
@@ -20,15 +21,18 @@ Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 #define CONTSTATIONARY 300 // 280
 #define CONTMAXNEGATIVE 512 // starts negative at 310, max negative at 510
 int HalfServoIndex = 14;
-int FullServoIndex = 0;
+// used to move servo CW and CCW
+int dir = 1;
 
-// Set up for stove stepper motor
+// Set up fuor stove stepper motor
 int in1Pin = 13;
 int in2Pin = 10;
 int in3Pin = 9;
 int in4Pin = 8;
 Stepper motor(768, in1Pin, in2Pin, in3Pin, in4Pin);
 
+//Interrupt pin
+int INTERRUPT_PIN =  4;
 
 // Global variables
 state CURRENT_STATE;
@@ -38,11 +42,10 @@ int saved_clock;
 int inps[] = {0, 0, 0, 0};
 
 // Input variables -- cooking_time is set via Alice's website (check eggScramblerWifi)
-int cooking_time;
+int cooking_time = 0;
 int stove_rotation = -600;
 
-//Interrupt pin
-int INTERRUPT_PIN =  4;
+
 
 void setup() {
 
@@ -79,7 +82,7 @@ void setup() {
   // Stove dial stepper speed, need to speed up or it breaks
   motor.setSpeed(20);
 
-//  test_all_tests();
+  // test_all_tests();
 
   // Set up wifi
   setupWifi();
@@ -130,8 +133,7 @@ state update_fsm(state cur_state, long mils, int moveVert, int is_button_pressed
       }
 
       break;     
-    case sTURN_STOVE_ON:
-    
+    case sTURN_STOVE_ON: 
       if (moveVert != 0 and !stop_button_pressed) { // transition 2-3
         move_spatula_z(moveVert);
         is_spatula_low = read_if_spatula_low(is_spatula_low_pin);
@@ -294,6 +296,7 @@ void WDT_Handler() {
 }
 
 void move_spatula_z(int moveVert) {
+  // this saved_clock call is in a function since it does not affect our fsm
   saved_clock = millis();
 
   if (moveVert == 1) {
@@ -322,13 +325,10 @@ void move_spatula_xy() {
     // half speed positive
     int tmp = 0;
     int fullServoSpeed = map(tmp, SERVOMIN, SERVOMAX, CONTSTATIONARY, CONTMAXPOSITIVE);
-    pwm.setPWM(HalfServoIndex, 0, i);
+    pwm.setPWM(HalfServoIndex, 0, dir*i);
     delay(50);
   }
-}
-
-void turn_stove(int stove_rotation) {
-  motor.step(stove_rotation);
+  dir = -1 * dir;
 }
 
 void interruptButtonClicked() {
@@ -338,4 +338,8 @@ void interruptButtonClicked() {
   }
   CURRENT_STATE  = sTURN_STOVE_OFF;
   Serial.println("Interrupted via stop button!");
+}
+
+void turn_stove(int stove_rotation) {
+  motor.step(stove_rotation);
 }

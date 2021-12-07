@@ -1,4 +1,4 @@
- #define TESTING
+#define TESTING
 
 /*
  * A struct to keep all state inputs in one place
