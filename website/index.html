@@ -43,18 +43,22 @@
                 }
             }
         }
+
+        function displayHelp() {
+            alert("Please open the Arduino Serial Monitor. Look for the line that says 'This is the Arduino's IP: '.")
+        }
     </script>
 </head>
 
 <body>
-    <h1 class="header">Enter IP Address</h1>
-    <!-- <h2 class="subheader">This is a paragraph.</h2> -->
-    <!-- <p class="info">Info about the Arduino</p> -->
+    <h1 class="header">Egg Scrambler</h1>
+    <p class="info">This is a project for CSCI1600 Real-Time and Embedded Systems at Brown University.</p>
+    <h2 class="info">To start, enter the egg scrambler's IP address</h2>
     <input id="ip" class="input-box placeholder" placeholder="192.168.1.1"></input>
     <button onclick="conditionalRedirect()" class="connect-button button-text unavailable add-space" name="button">
         Connect
     </button>
-    <p class="second-option-text">Can't find IP address?</p>
+    <p onclick="displayHelp()" class="second-option-text">Can't find IP address?</p>
 </body>
 
 </html>

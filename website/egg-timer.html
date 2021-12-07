@@ -91,6 +91,10 @@
                 alert("Can't connect to egg scrambler. Please try again.")
             }
         }
+        
+        function hidePopup() {
+            document.getElementsByName("float")[0].classList.add('hidden');
+        }
     </script>
 </head>
 
@@ -110,7 +114,7 @@
                     Start a new batch
                 </button>
             </a>
-            <p class="second-option-text">Close</p>
+            <p onclick="hidePopup()" class="second-option-text">Close</p>
         </div>
     </div>
 </body>

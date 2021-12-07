@@ -36,6 +36,8 @@ html, body { height: 100%; width: 100%; margin: 0; }
     /* Gray/04 */
     color: #666666;
     min-height: 0;
+    margin-left: 5%;
+    margin-right: 5%;
 }
 
 .button-text {
@@ -54,6 +56,7 @@ html, body { height: 100%; width: 100%; margin: 0; }
     line-height: 19px;
     /* Primary */
     color: #855400;
+    cursor: pointer;
 }
 
 ::placeholder {
