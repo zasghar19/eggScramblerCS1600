@@ -50,24 +50,6 @@ bool test_transition(state start_state,
 //  }
 //}
 
-///*
-// * Helper function for printing orientations
-// */
-//char* o2str(orientation o) {
-//  switch(o) {
-//    case UP:
-//    return "UP";
-//    case RIGHT:
-//    return "RIGHT";
-//    case DOWN:
-//    return "DOWN";
-//    case LEFT:
-//    return "LEFT";
-//    default:
-//    return "???";
-//  }
-//}
-
 /*
  * Given a start state, inputs, and starting values for state variables, tests that
  * update_fsm returns the correct end state and updates the state variables correctly
@@ -90,9 +72,16 @@ bool test_transition(state start_state,
   bool passed_test = (end_state == result_state and
                       is_spatula_low == end_state_vars.is_spatula_low and
                       stove_rotated == end_state_vars.stove_rotated and
-                      saved_clock == end_state_vars.saved_clock and
                       cooking_time == end_state_vars.cooking_time and
                       stove_rotation == end_state_vars.stove_rotation);
+  if (start_state == 4) {
+    passed_test = (end_state == result_state and
+                      is_spatula_low == end_state_vars.is_spatula_low and
+                      stove_rotated == end_state_vars.stove_rotated and
+                      cooking_time == end_state_vars.cooking_time and
+                      stove_rotation == end_state_vars.stove_rotation) and
+                      saved_clock == end_state_vars.saved_clock;
+  }
                       
 
   if (! verbos) {
@@ -113,12 +102,12 @@ bool test_transition(state start_state,
 //    Serial.println(s_to_print);
 //    sprintf(s_to_print, "          %2s | %2s | %5s | %3s | %3s ", "is_spatual_low", "stove_rotated", "saved_clock", "cooking_time", "stove_rotation");
 //    Serial.println(s_to_print);
-    sprintf(s_to_print, "expected: %2d | %2d | %2d | %3d | %3d ", end_state_vars.is_spatula_low, end_state_vars.stove_rotated, end_state_vars.saved_clock, end_state_vars.cooking_time, end_state_vars.stove_rotation);
-    Serial.println(s_to_print);
-    sprintf(s_to_print, "actual:   %2d | %2d | %2d | %3d | %3d ", is_spatula_low, stove_rotated, saved_clock, cooking_time, stove_rotation);
-    Serial.println(s_to_print);
-    Serial.print(end_state);
-    Serial.print(result_state);
+//    sprintf(s_to_print, "expected: %2d | %2d | %2d | %3d | %3d ", end_state_vars.is_spatula_low, end_state_vars.stove_rotated, end_state_vars.saved_clock, end_state_vars.cooking_time, end_state_vars.stove_rotation);
+//    Serial.println(s_to_print);
+//    sprintf(s_to_print, "actual:   %2d | %2d | %2d | %3d | %3d ", is_spatula_low, stove_rotated, saved_clock, cooking_time, stove_rotation);
+//    Serial.println(s_to_print);
+//    Serial.print(end_state);
+//    Serial.print(result_state);
     return false;
   }
 }
@@ -144,6 +133,6 @@ bool test_all_tests() {
     }
     Serial.println();
   }
-  Serial.println("All tests passed!");
+  Serial.println("All passed!");
   return true;
 }
