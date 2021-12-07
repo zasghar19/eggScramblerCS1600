@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="egg-design.css">
     <script>
+        // for testing:
         // localStorage["countdown"] = 10;
         var countdown = localStorage["countdown"];
         var currCount = localStorage["countdown"];
@@ -15,7 +16,6 @@
             localStorage["countdown"] = localStorage["countdown"] - 1;
         });
         currCount = setInterval(function () {
-            // console.log(currCount);
             window.requestAnimationFrame(function () {
                 if (currCount == 0) {
                     setTimeCircle(localStorage["countdown"]);
